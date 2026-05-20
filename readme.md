@@ -81,6 +81,8 @@ bash xxx.sh
 
 Adversarial samples are generated using [TextAttack](https://github.com/QData/TextAttack) to evaluate robustness against natural perturbations.
 
+Perplexity (PPL) detection comes from [ONION](https://github.com/thunlp/ONION).
+
 ---
 
 ## 🧪 Experiments
