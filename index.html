@@ -9,6 +9,8 @@
     <style>
         .fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .tab-active { border-bottom: 2px solid #2563eb; color: #1e3a8a; font-weight: bold; }
+        .tab-inactive { color: #6b7280; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
@@ -38,39 +40,61 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             <div class="lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-                <h3 class="text-lg font-bold text-gray-800 mb-5 border-b pb-3">配置评估参数</h3>
+                <div class="flex border-b mb-5 cursor-pointer">
+                    <div @click="activeTab = 'standard'" class="pb-2 px-2 flex-1 text-center" :class="activeTab === 'standard' ? 'tab-active' : 'tab-inactive'">标准预设评估</div>
+                    <div @click="activeTab = 'upload'" class="pb-2 px-2 flex-1 text-center" :class="activeTab === 'upload' ? 'tab-active' : 'tab-inactive'">自定义文件检测</div>
+                </div>
                 
                 <div class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">选择评估数据集</label>
-                        <select v-model="form.dataset" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                            <option v-for="item in options.datasets" :key="item.id" :value="item.id">{{ item.name }}</option>
-                        </select>
+                    <div v-show="activeTab === 'standard'" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">选择评估数据集</label>
+                            <select v-model="form.dataset" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option v-for="item in options.datasets" :key="item.id" :value="item.id">{{ item.name }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">选择目标攻击方法</label>
+                            <select v-model="form.attack" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option v-for="item in options.attacks" :key="item.id" :value="item.id">{{ item.name }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">选择安全检测方法</label>
+                            <select v-model="form.detection" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-blue-800 font-medium bg-white">
+                                <option v-for="item in options.detections" :key="item.id" :value="item.id">{{ item.name }}</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">选择目标攻击方法</label>
-                        <select v-model="form.attack" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                            <option v-for="item in options.attacks" :key="item.id" :value="item.id">{{ item.name }}</option>
-                        </select>
+                    <div v-show="activeTab === 'upload'" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">上传测试数据集 (.csv, .json)</label>
+                            <div class="flex items-center justify-center w-full">
+                                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <svg class="w-8 h-8 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">点击上传</span> 或拖拽文件</p>
+                                    </div>
+                                    <input type="file" class="hidden" @change="handleFileUpload" accept=".csv,.json,.txt" />
+                                </label>
+                            </div>
+                            <p v-if="selectedFile" class="text-sm text-green-600 mt-2 font-medium flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                已选择: {{ selectedFile.name }}
+                            </p>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">选择安全检测方法</label>
-                        <select v-model="form.detection" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-blue-800 font-medium">
-                            <option v-for="item in options.detections" :key="item.id" :value="item.id">{{ item.name }}</option>
-                        </select>
-                    </div>
-
-                    <div>
+                    <div class="pt-2 border-t">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">选择目标大模型</label>
-                        <select v-model="form.model" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        <select v-model="form.model" class="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                             <option v-for="item in options.models" :key="item.id" :value="item.id">{{ item.name }}</option>
                         </select>
                     </div>
 
-                    <button @click="runEvaluation" :disabled="isLoading" 
-                            class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md shadow transition-colors disabled:bg-blue-300 flex justify-center items-center">
+                    <button @click="runEvaluation" :disabled="isLoading || (activeTab === 'upload' && !selectedFile)" 
+                            class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md shadow transition-colors disabled:bg-gray-400 flex justify-center items-center">
                         <span v-if="isLoading" class="flex items-center">
                             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -88,25 +112,23 @@
                 
                 <div v-if="!report && !isLoading" class="flex flex-col items-center justify-center py-20 text-gray-400">
                     <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <p>等待配置参数并启动检测程序</p>
+                    <p>等待配置参数或上传文件以启动检测程序</p>
                 </div>
 
                 <div v-if="isLoading" class="space-y-4 animate-pulse pt-4">
                     <div class="h-5 bg-gray-200 rounded w-1/3 mb-6"></div>
                     <div class="h-10 bg-gray-200 rounded w-full"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="h-24 bg-gray-100 rounded"></div>
-                        <div class="h-24 bg-gray-100 rounded"></div>
-                    </div>
-                    <div class="h-20 bg-gray-100 rounded w-full mt-4"></div>
+                    <div class="grid grid-cols-2 gap-4"><div class="h-24 bg-gray-100 rounded"></div><div class="h-24 bg-gray-100 rounded"></div></div>
+                    <div class="h-40 bg-gray-100 rounded w-full mt-4"></div>
                 </div>
 
                 <transition name="fade">
                     <div v-if="report && !isLoading" class="pt-2">
                         
-                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r mb-6 shadow-sm">
-                            <div class="flex items-center text-red-800">
-                                <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                        <div :class="report.status === 'error' ? 'bg-orange-50 border-orange-500 text-orange-800' : (report.conclusion.includes('安全') ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800')" class="border-l-4 p-4 rounded-r mb-6 shadow-sm">
+                            <div class="flex items-center">
+                                <svg v-if="report.status === 'error'" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                <svg v-else class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
                                 <span class="font-bold text-lg">{{ report.conclusion }}</span>
                             </div>
                         </div>
@@ -127,13 +149,54 @@
                             <p class="text-blue-800 text-sm leading-relaxed">{{ report.details }}</p>
                         </div>
 
+                        <div v-if="report.tables && Object.keys(report.tables).length > 0" class="mb-6 grid grid-cols-1 gap-4">
+                            
+                            <div v-if="report.tables.style_transfer && !report.dataset.includes('自定义')" class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="bg-gray-100 px-4 py-2 font-bold text-sm text-gray-700">风格转移攻击检测 AUROC (Ours)</div>
+                                <table class="w-full text-xs text-left text-gray-600">
+                                    <thead class="bg-gray-50 border-b">
+                                        <tr><th class="px-4 py-2">数据集</th><th class="px-2 py-2 text-center">Formality</th><th class="px-2 py-2 text-center">Lyrics</th><th class="px-2 py-2 text-center">Poetry</th><th class="px-2 py-2 text-center">Shakespeare</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(metrics, dataset) in report.tables.style_transfer" :key="dataset" class="border-b last:border-0">
+                                            <td class="px-4 py-2 font-bold">{{ dataset }}</td>
+                                            <td class="px-2 py-2 text-center font-mono font-bold text-blue-600">{{ metrics.Formality }}</td>
+                                            <td class="px-2 py-2 text-center font-mono font-bold text-blue-600">{{ metrics.Lyrics }}</td>
+                                            <td class="px-2 py-2 text-center font-mono font-bold text-blue-600">{{ metrics.Poetry }}</td>
+                                            <td class="px-2 py-2 text-center font-mono font-bold text-blue-600">{{ metrics.Shakespeare }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div v-if="report.tables.complex" :class="report.dataset.includes('自定义') ? 'col-span-2' : ''" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div class="font-bold text-sm text-gray-700 mb-2">{{ report.dataset.includes('自定义') ? '文件盲测详细指标' : '评估数据详情' }}</div>
+                                    <ul class="text-sm space-y-2 text-gray-600 font-mono">
+                                        <li v-for="(val, key) in report.tables.complex" :key="key">
+                                            <span class="font-bold text-gray-800">{{ key }}:</span> <span class="text-blue-700">{{ val }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div v-if="report.tables.multi_trigger && !report.dataset.includes('自定义')" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div class="font-bold text-sm text-gray-700 mb-2">组合触发器检测 (COVID)</div>
+                                    <ul class="text-xs space-y-1 text-gray-600 font-mono">
+                                        <li v-for="(val, key) in report.tables.multi_trigger" :key="key">
+                                            <span class="font-bold">{{ key }}:</span> {{ val }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto shadow-inner">
                             <p>> 环境日志初始化 (Environment Initialized)</p>
-                            <p>> Target Model: {{ report.model_tested }}</p>
-                            <p>> Dataset Context: {{ report.dataset }}</p>
-                            <p>> Attack Vector: {{ report.attack_evaluated }}</p>
-                            <p>> Selected Defense Plugin: {{ report.detection_method.toUpperCase() }}</p>
-                            <p>> HTTP STATUS 200 - 检测流程执行完毕</p>
+                            <p>> Target Model: {{ report.model_tested || 'N/A' }}</p>
+                            <p>> Dataset Context: {{ report.dataset || 'N/A' }}</p>
+                            <p>> Attack Vector: {{ report.attack_evaluated || 'N/A' }}</p>
+                            <p>> Selected Defense Plugin: {{ report.detection_method || 'N/A' }}</p>
+                            <p>> HTTP STATUS: {{ report.status === 'error' ? '400 - Invalid Config' : '200 - Analysis Complete' }}</p>
                         </div>
 
                     </div>
@@ -147,57 +210,104 @@
 
         createApp({
             setup() {
-                const options = ref({ attacks: [], detections: [], models: [], datasets: [] })
+                const activeTab = ref('standard')
+                
+                const options = ref({
+                    datasets: [
+                        {id: "covid", name: "COVID (Style Transfer)"},
+                        {id: "olid", name: "OLID (Style Transfer)"},
+                        {id: "yelp", name: "YELP (Style Transfer)"},
+                        {id: "emo", name: "Emo (CBA)"},
+                        {id: "twt", "name": "Twt (CBA)"},
+                        {id: "asdiv", "name": "ASDiv (BadChain)"},
+                        {id: "ag", "name": "AG (BadEdit)"},
+                        {id: "instruction", "name": "Instruction (VPI)"},
+                        {id: "hhh", "name": "HHH (Sleepagent)"}
+                    ],
+                    attacks: [
+                        {id: "style", name: "Style Transfer (风格转移)"},
+                        {id: "cba", name: "CBA (干净标签)"},
+                        {id: "badchain", name: "BadChain (思维链)"},
+                        {id: "badedit", name: "BadEdit (知识编辑)"},
+                        {id: "vpi", name: "VPI (虚拟提示词)"},
+                        {id: "sleepagent", name: "Sleepagent (休眠代理)"}
+                    ],
+                    detections: [
+                        {id: "nete", name: "NETE (本文方法)"},
+                        {id: "strip", name: "STRIP (基线)"},
+                        {id: "onion", "name": "ONION (基线)"}
+                    ],
+                    models: [
+                        {id: "llama-2-7b", name: "LLaMA-2-7B"},
+                        {id: "llama-3-8b", name: "LLaMA-3-8B"},
+                        {id: "vicuna-7b", name: "Vicuna-7B"}
+                    ]
+                });
+
                 const form = ref({
-                    attack: 'badchain',
+                    attack: 'style',
                     detection: 'nete',
                     model: 'llama-2-7b',
-                    dataset: 'sst-2'
-                })
+                    dataset: 'covid'
+                });
+                
+                const selectedFile = ref(null)
                 const isLoading = ref(false)
                 const report = ref(null)
 
-                // 页面加载时获取选项
                 onMounted(async () => {
                     try {
                         const res = await fetch('http://localhost:8000/api/options');
-                        options.value = await res.json();
-                    } catch (error) {
-                        console.error("无法连接到后端，已加载本地默认配置", error);
-                        // 后端未运行时的回退默认数据
-                        options.value = {
-                            datasets: [{id: "sst-2", name: "SST-2 (情感分类)"}, {id: "ag-news", name: "AG News (新闻分类)"}, {id: "alpaca", name: "Alpaca-Data (指令微调)"}],
-                            attacks: [{ id: "badchain", name: "BadChain (思维链后门)" }, { id: "badedit", name: "BadEdit" }, { id: "cba", name: "CBA" }],
-                            detections: [{ id: "nete", name: "NETE (本文方法)" }, { id: "strip", name: "STRIP (基线)" }, { id: "onion", name: "Onion (基线)" }],
-                            models: [{ id: "llama-2-7b", name: "LLaMA-2-7B" }, { id: "vicuna-7b", name: "Vicuna-7B" }]
+                        if(res.ok) {
+                            options.value = await res.json();
                         }
+                    } catch (error) {
+                        console.log("未连接到后端 API，使用内置默认数据配置界面。");
                     }
                 })
 
-                // 提交执行
+                const handleFileUpload = (event) => {
+                    const file = event.target.files[0];
+                    if (file) { selectedFile.value = file; }
+                }
+
                 const runEvaluation = async () => {
                     isLoading.value = true;
                     report.value = null;
+                    
                     try {
-                        const res = await fetch('http://localhost:8000/api/evaluate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                attack_method: form.value.attack,
-                                detection_method: form.value.detection,
-                                model_name: form.value.model,
-                                dataset: form.value.dataset
-                            })
-                        });
+                        let res;
+                        if (activeTab.value === 'standard') {
+                            res = await fetch('http://localhost:8000/api/evaluate', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    attack_method: form.value.attack,
+                                    detection_method: form.value.detection,
+                                    model_name: form.value.model,
+                                    dataset: form.value.dataset
+                                })
+                            });
+                        } else {
+                            const formData = new FormData();
+                            formData.append('file', selectedFile.value);
+                            formData.append('model', form.value.model);
+                            
+                            res = await fetch('http://localhost:8000/api/evaluate_file', {
+                                method: 'POST',
+                                body: formData
+                            });
+                        }
+                        
                         report.value = await res.json();
                     } catch (error) {
-                        alert('检测服务未响应，请确保后端服务 (http://localhost:8000) 已启动。');
+                        alert('检测服务未响应，请确保 FastAPI 后端服务 (http://localhost:8000) 已启动。');
                     } finally {
                         isLoading.value = false;
                     }
                 }
 
-                return { options, form, isLoading, report, runEvaluation }
+                return { activeTab, options, form, selectedFile, handleFileUpload, isLoading, report, runEvaluation }
             }
         }).mount('#app')
     </script>
